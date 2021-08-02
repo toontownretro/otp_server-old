@@ -4,7 +4,7 @@
  * Licensing information can found in 'LICENSE', which is part of this source code package.
 """
 
-import __builtin__
+import builtins 
 import os
 
 from panda3d.core import loadPrcFile, VirtualFileSystem
@@ -12,14 +12,14 @@ from panda3d.core import loadPrcFile, VirtualFileSystem
 if os.path.exists('config/general.prc'):
     loadPrcFile('config/general.prc')
 
-from pandac.PandaModules import *
+from panda3d.core import *
 from direct.task.TaskManagerGlobal import taskMgr as task_mgr
 
-from realtime.notifier import notify
+from otp_server.realtime.notifier import notify
 
-__builtin__.config = get_config_showbase()
-__builtin__.task_mgr = task_mgr
-__builtin__.vfs = VirtualFileSystem.get_global_ptr()
+builtins .config = get_config_showbase()
+builtins .task_mgr = task_mgr
+builtins .vfs = VirtualFileSystem.get_global_ptr()
 
 from realtime import io, types, clientagent, messagedirector, \
     stateserver, database

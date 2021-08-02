@@ -16,7 +16,7 @@
 
 // What is the name and version of this source tree?
 #if $[eq $[PACKAGE],]
-  #define PACKAGE otp-server
+  #define PACKAGE otp_server
   #define VERSION 0.80
 #endif
 
@@ -36,24 +36,24 @@
   #define OTP_SOURCE $[standardize $[TOPDIR]/../otp]
 #endif
 
-// Where should we install OTP-SERVER?
-#if $[OTP-SERVER_INSTALL]
-  #define OTP-SERVER_INSTALL $[unixfilename $[OTP-SERVER_INSTALL]]
+// Where should we install OTP_SERVER?
+#if $[OTP_SERVER_INSTALL]
+  #define OTP_SERVER_INSTALL $[unixfilename $[OTP_SERVER_INSTALL]]
 #elif $[CTPROJS]
-  #set OTP-SERVER $[unixfilename $[OTP-SERVER]]
-  #define OTP-SERVER_INSTALL $[OTP-SERVER]/built
-  #if $[eq $[OTP-SERVER],]
-    #error You seem to be attached to some trees, but not OTP-SERVER!
+  #set OTP_SERVER $[unixfilename $[OTP_SERVER]]
+  #define OTP_SERVER_INSTALL $[OTP_SERVER]/built
+  #if $[eq $[OTP_SERVER],]
+    #error You seem to be attached to some trees, but not OTP_SERVER!
   #endif
 #else
-  #defer OTP-SERVER_INSTALL $[unixfilename $[INSTALL_DIR]]
+  #defer OTP_SERVER_INSTALL $[unixfilename $[INSTALL_DIR]]
 #endif
 
 
 // Also get the OTP Package file and everything that includes.
 #if $[not $[isfile $[OTP_SOURCE]/Package.pp]]
   #printvar OTP_SOURCE
-  #error OTP source directory not found from otp-server!  Are you attached properly?
+  #error OTP source directory not found from otp_server!  Are you attached properly?
 #endif
 
 #include $[OTP_SOURCE]/Package.pp
