@@ -7,12 +7,12 @@
 import builtins 
 import os
 
-from panda3d.core import loadPrcFile, VirtualFileSystem
+from panda3d.core import *
+from pandac.PandaModules import get_config_showbase
 
 if os.path.exists('config/general.prc'):
     loadPrcFile('config/general.prc')
 
-from panda3d.core import *
 from direct.task.TaskManagerGlobal import taskMgr as task_mgr
 
 from otp_server.realtime.notifier import notify
@@ -21,8 +21,7 @@ builtins .config = get_config_showbase()
 builtins .task_mgr = task_mgr
 builtins .vfs = VirtualFileSystem.get_global_ptr()
 
-from realtime import io, types, clientagent, messagedirector, \
-    stateserver, database
+from otp_server.realtime import io, types, clientagent, messagedirector, stateserver, database
 
 notify = notify.new_category('Main')
 

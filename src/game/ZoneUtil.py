@@ -1,4 +1,4 @@
-from game.ToontownGlobals import *
+from otp_server.game.ToontownGlobals import *
 from direct.directnotify import DirectNotifyGlobal
 zoneUtilNotify = DirectNotifyGlobal.directNotify.newCategory('ZoneUtil')
 tutorialDict = None

@@ -12,8 +12,8 @@ from panda3d.direct import *
 
 from direct.distributed.PyDatagramIterator import PyDatagramIterator
 
-from realtime import types
-from realtime.notifier import notify
+from otp_server.realtime import types
+from otp_server.realtime.notifier import notify
 
 class NetworkError(RuntimeError):
     """

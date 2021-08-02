@@ -21,16 +21,16 @@ from direct.distributed.PyDatagram import PyDatagram
 from direct.distributed.MsgTypes import *
 from direct.fsm.FSM import FSM
 
-from realtime import io
-from realtime import types
-from realtime.notifier import notify
-from realtime import util
+from otp_server.realtime import io
+from otp_server.realtime import types
+from otp_server.realtime.notifier import notify
+from otp_server.realtime import util
 
-from game.OtpDoGlobals import *
-from game import ZoneUtil
-from game.NameGenerator import NameGenerator
-from game import genDNAFileName, extractGroupName
-from game.dna.DNAParser import loadDNAFileAI, DNAStorage
+from otp_server.game.OtpDoGlobals import *
+from otp_server.game import ZoneUtil
+from otp_server.game.NameGenerator import NameGenerator
+from otp_server.game import genDNAFileName, extractGroupName
+from otp_server.game.dna.DNAParser import loadDNAFileAI, DNAStorage
 
 ESSENTIAL_COMPLETE_ZONES = [OTP_ZONE_ID_OLD_QUIET_ZONE, 
     OTP_ZONE_ID_MANAGEMENT, 
@@ -1360,7 +1360,7 @@ class Client(io.NetworkHandler):
         if self.has_seen_object(do_id, True):
             if not self._seen_objects.has_key(new_zone_id):
                 self._seen_objects[new_zone_id] = []
-            print "ack change for %d to %d" %(do_id, new_zone_id)
+            print("ack change for %d to %d" % (do_id, new_zone_id))
             self._seen_objects[new_zone_id].append(do_id)
             
     def handle_client_object_location(self, di):
@@ -1520,9 +1520,9 @@ class Client(io.NetworkHandler):
             if not self._interest_manager.has_interest_object_parent_and_zone(interest.getParent(), zone, False, True):
                 finalZones.append(zone)
                 
-        print "Client requested zones are: ", finalZones
-        print "Client visible zones are: ", interest.getVisZones()
-        print "==="
+        print("Client requested zones are: ", finalZones)
+        print("Client visible zones are: ", interest.getVisZones())
+        print("===")
         
         self._interest_manager.add_interest_object(interest)
             
@@ -1550,7 +1550,7 @@ class Client(io.NetworkHandler):
         self.handle_send_datagram(dg)
         
     def handle_interest_complete_callback(self, complete, contextId):
-        print complete, contextId
+        print(complete, contextId)
         if complete:
             if self._pending_interests.has_key(contextId):
                 interest = self._pending_interests[contextId]
@@ -2223,7 +2223,7 @@ class Client(io.NetworkHandler):
             
         self._deleted_object_history.append(do_id)
 
-        print "deleting id %d" %do_id
+        print("deleting id %d" % do_id)
         datagram = io.NetworkDatagram()
         datagram.add_uint16(types.CLIENT_OBJECT_DELETE_RESP)
         datagram.add_uint32(do_id)

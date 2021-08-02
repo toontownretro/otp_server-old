@@ -11,14 +11,13 @@ import random
 
 from panda3d.direct import *
 
-from realtime import io
-from realtime import types
-from realtime.notifier import notify
-from realtime import util
+from otp_server.realtime import io
+from otp_server.realtime import types
+from otp_server.realtime.notifier import notify
+from otp_server.realtime import util
 
-from game.OtpDoGlobals import *
-from game import ZoneUtil
-
+from otp_server.game.OtpDoGlobals import *
+from otp_server.game import ZoneUtil
 
 class Shard(object):
 
@@ -618,7 +617,7 @@ class StateObject(object):
         datagram.add_uint16(len(zone_objects))
         for zone_object in zone_objects:
             if zone_object.dc_class.get_name() == "DistributedSuit" and not self.object_manager.tracking:
-                print "will be keeping track of suit %d at %d" %(zone_object.do_id, zone_object.zone_id) 
+                print("will be keeping track of suit %d at %d" %(zone_object.do_id, zone_object.zone_id))
                 self.object_manager.tracking = zone_object.do_id
             datagram.add_uint64(zone_object.do_id)
 

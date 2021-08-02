@@ -1,11 +1,11 @@
-import ply.lex as lex
+from .ply import lex
 import sys, collections
 from panda3d.core import PandaNode, NodePath, Filename, DecalEffect, TextNode, SceneGraphReducer, FontPool
 from panda3d.core import LVector3f, LVector4f, BitMask32, TexturePool, ModelNode, TextProperties, DepthWriteAttrib, LPoint3f, LVecBase3f
 from direct.showbase import Loader
 from direct.stdpy.file import *
 import math, random
-from DNATypesetter import DNATypesetter
+from .DNATypesetter import DNATypesetter
 
 tokens = [
   'FLOAT',
@@ -394,12 +394,12 @@ class DNAStorage:
         self.blockZones = {}
 
     def ls(self):
-        print 'DNASuitPoints:'
+        print('DNASuitPoints:')
         for suitPoint in self.suitPoints:
-            print '\t', suitPoint
-        print 'DNABattleCells:'
+            print('\t', suitPoint)
+        print('DNABattleCells:')
         for cell in self.battleCells:
-            print '\t', cell
+            print('\t', cell)
 
 class DNASuitPath:
     def __init__(self):
@@ -1006,7 +1006,7 @@ class DNAFlatBuilding(DNANode):
             else:
                 child.traverse(node, dnaStorage)
         if DNAFlatBuilding.currentWallHeight == 0:
-            print 'empty flat building with no walls'
+            print('empty flat building with no walls')
         else:
             cameraBarrier = dnaStorage.findNode('wall_camera_barrier')
             if cameraBarrier is None:
@@ -1642,7 +1642,7 @@ class DNALoader:
     def getData(self):
         return self.data
 
-import ply.yacc as yacc
+from .ply import yacc
 
 def p_dna(p):
     pass
@@ -2467,7 +2467,7 @@ def p_error(p):
     raise DNAError('Syntax error at line ' + str(p.lexer.lineno) + ' token=' + str(p))
 
 def loadDNAFile(dnaStore, filename, cs, editing):
-    print 'Reading DNA file...', filename
+    print('Reading DNA file...', filename)
     dnaloader = DNALoader()
     dnaloader.getData().setDnaStorage(dnaStore)
     dnaloader.getData().read(open(filename, 'r'))

@@ -111,7 +111,7 @@ class NameGenerator:
                 maxWidth = text.calcWidth(name)
                 maxName = name
 
-        print maxName + ' ' + str(maxWidth)
+        print(maxName + ' ' + str(maxWidth))
         return maxName
 
     def findWidestName(self):
@@ -163,13 +163,13 @@ class NameGenerator:
         name = self.findWidestName()
         width = self.text.calcWidth(name)
         widthStr = str(width)
-        print 'The widest name is: ' + name + ' (' + widthStr + ' units)'
+        print('The widest name is: ' + name + ' (' + widthStr + ' units)')
 
     def printWidestLastName(self):
         name = self.findWidestLastName()
         width = self.text.calcWidth(name)
         widthStr = str(width)
-        print 'The widest last name is: ' + name + ' (' + widthStr + ' units)'
+        print('The widest last name is: ' + name + ' (' + widthStr + ' units)')
 
     def randomName(self, boy = 0, girl = 0):
         if boy and girl:
@@ -292,9 +292,9 @@ class NameGenerator:
             width = self.text.calcWidth(name)
             widthStr = str(width)
             if boy:
-                print 'Boy: ' + name + ' (' + widthStr + ' units)'
+                print('Boy: ' + name + ' (' + widthStr + ' units)')
             if girl:
-                print 'Girl: ' + name + ' (' + widthStr + ' units)'
+                print('Girl: ' + name + ' (' + widthStr + ' units)')
             i += 1
 
     def percentOver(self, limit = 9.0, samples = 1000):
@@ -308,32 +308,32 @@ class NameGenerator:
             i += 1
 
         percent = float(over) / float(samples) * 100
-        print 'Samples: ' + str(samples) + ' Over: ' + str(over) + ' Percent: ' + str(percent)
+        print('Samples: ' + str(samples) + ' Over: ' + str(over) + ' Percent: ' + str(percent))
 
     def totalNames(self):
         firsts = len(self.boyFirsts) + len(self.girlFirsts) + len(self.neutralFirsts)
-        print 'Total firsts: ' + str(firsts)
+        print('Total firsts: ' + str(firsts))
         lasts = len(self.lastPrefixes) * len(self.lastSuffixes)
-        print 'Total lasts: ' + str(lasts)
+        print('Total lasts: ' + str(lasts))
         neutralTitleFirsts = len(self.neutralTitles) * len(self.neutralFirsts)
         boyTitleFirsts = len(self.boyTitles) * (len(self.neutralFirsts) + len(self.boyFirsts)) + len(self.neutralTitles) * len(self.boyFirsts)
         girlTitleFirsts = len(self.girlTitles) * (len(self.neutralFirsts) + len(self.girlFirsts)) + len(self.neutralTitles) * len(self.girlFirsts)
         totalTitleFirsts = neutralTitleFirsts + boyTitleFirsts + girlTitleFirsts
-        print 'Total title firsts: ' + str(totalTitleFirsts)
+        print('Total title firsts: ' + str(totalTitleFirsts))
         neutralTitleLasts = len(self.neutralTitles) * lasts
         boyTitleLasts = len(self.boyTitles) * lasts
         girlTitleLasts = len(self.girlTitles) * lasts
         totalTitleLasts = neutralTitleLasts + boyTitleFirsts + girlTitleLasts
-        print 'Total title lasts: ' + str(totalTitleLasts)
+        print('Total title lasts: ' + str(totalTitleLasts))
         neutralFirstLasts = len(self.neutralFirsts) * lasts
         boyFirstLasts = len(self.boyFirsts) * lasts
         girlFirstLasts = len(self.girlFirsts) * lasts
         totalFirstLasts = neutralFirstLasts + boyFirstLasts + girlFirstLasts
-        print 'Total first lasts: ' + str(totalFirstLasts)
+        print('Total first lasts: ' + str(totalFirstLasts))
         neutralTitleFirstLasts = neutralTitleFirsts * lasts
         boyTitleFirstLasts = boyTitleFirsts * lasts
         girlTitleFirstLasts = girlTitleFirsts * lasts
         totalTitleFirstLasts = neutralTitleFirstLasts + boyTitleFirstLasts + girlTitleFirstLasts
-        print 'Total title first lasts: ' + str(totalTitleFirstLasts)
+        print('Total title first lasts: ' + str(totalTitleFirstLasts))
         totalNames = firsts + lasts + totalTitleFirsts + totalTitleLasts + totalFirstLasts + totalTitleFirstLasts
-        print 'Total Names: ' + str(totalNames)
+        print('Total Names: ' + str(totalNames))

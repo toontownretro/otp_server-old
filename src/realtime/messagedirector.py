@@ -10,9 +10,9 @@ import time
 
 from panda3d.core import *
 
-from realtime import io
-from realtime import types
-from realtime.notifier import notify
+from otp_server.realtime import io
+from otp_server.realtime import types
+from otp_server.realtime.notifier import notify
 
 class MessageError(RuntimeError):
     """
