@@ -4,7 +4,7 @@ net-want-threads #f
 
 # MessageDirector:
 messagedirector-address 0.0.0.0
-messagedirector-port 7100
+messagedirector-port 6666
 messagedirector-message-timeout 15.0
 
 # ClientAgent:
@@ -22,12 +22,12 @@ clientagent-hash-val 0
 
 # StateServer:
 stateserver-connect-address 127.0.0.1
-stateserver-connect-port 7100
+stateserver-connect-port 6666
 stateserver-channel 1001
 
 # Database:
 database-connect-address 127.0.0.1
-database-connect-port 7100
+database-connect-port 6666
 database-channel 1002
 database-directory databases/json
 database-extension .json

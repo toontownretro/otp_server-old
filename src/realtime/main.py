@@ -10,8 +10,8 @@ import os
 from panda3d.core import *
 from pandac.PandaModules import get_config_showbase
 
-if os.path.exists('config/general.prc'):
-    loadPrcFile('config/general.prc')
+if os.path.exists('$OTP_SERVER/config/general.prc'):
+    loadPrcFile('$OTP_SERVER/config/general.prc')
 
 from direct.task.TaskManagerGlobal import taskMgr as task_mgr
 
@@ -42,7 +42,7 @@ def shutdown_component(component):
 
 def main():
     dc_loader = io.NetworkDCLoader()
-    dc_loader.read_dc_files(['../otp/src/configfiles/otp.dc', '../toontown/src/configfiles/toon.dc'])
+    dc_loader.read_dc_files(['otp.dc', 'toon.dc'])
 
     message_director_address = config.GetString('messagedirector-address', '0.0.0.0')
     message_director_port = config.GetInt('messagedirector-port', 6666)

@@ -4,6 +4,7 @@
  * Licensing information can found in 'LICENSE', which is part of this source code package.
 """
 
+import os
 import collections
 import threading
 
@@ -86,7 +87,20 @@ class NetworkDCLoader(object):
                 self.notify.error('Could not read dc file.')
         else:
             for dc_fileName in dc_file_names:
+                searchPath = DSearchPath()
+                
+                # In other environments, including the dev environment, look here:
+                searchPath.appendDirectory(Filename('phase_3/etc'))
+                base = os.path.expandvars('$TOONTOWN') or './toontown'
+                searchPath.appendDirectory(Filename.fromOsSpecific(os.path.expandvars(base+'/src/configfiles')))
+                base = os.path.expandvars('$OTP') or './otp'
+                searchPath.appendDirectory(Filename.fromOsSpecific(os.path.expandvars(base+'/src/configfiles')))
+                # RobotToonManager needs to look for file in current directory
+                searchPath.appendDirectory(Filename('.'))
+
                 pathname = Filename(dc_fileName)
+                vfs.resolveFilename(pathname, searchPath)
+                
                 read_result = self._dc_file.read(pathname)
                 if not read_result:
                     self.notify.error('Could not read dc file: %s' % pathname)
