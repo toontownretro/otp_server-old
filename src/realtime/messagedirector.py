@@ -24,25 +24,10 @@ class Participant(io.NetworkHandler):
 
     def __init__(self, *args, **kwargs):
         io.NetworkHandler.__init__(self, *args, **kwargs)
-
-        self._lo_channel = 0
-        self._hi_channel = 0
-
-    @property
-    def lo_channel(self):
-        return self._lo_channel
-
-    @lo_channel.setter
-    def lo_channel(self, lo_channel):
-        self._lo_channel = lo_channel
-
-    @property
-    def hi_channel(self):
-        return self._hi_channel
-
-    @hi_channel.setter
-    def hi_channel(self, hi_channel):
-        self._hi_channel = hi_channel
+        
+        self.connectionName = ""
+        self.connectionURL = ""
+        self.connectionHost = 0
 
     def handle_datagram(self, di):
         channels = di.get_uint8()
@@ -56,17 +41,17 @@ class Participant(io.NetworkHandler):
             sender = di.get_uint64()
 
             if message_type == types.CONTROL_SET_CHANNEL:
-                if not self.channel:
-                    self.channel = sender
+                if not self.connectionHost:
+                    self.connectionHost = sender
 
                 self.network.interface.add_participant(sender, self)
             elif message_type == types.CONTROL_REMOVE_CHANNEL:
                 self.network.message_interface.flush_post_handles(sender)
                 self.network.interface.remove_participant(sender)
             elif message_type == types.CONTROL_SET_CON_NAME:
-                pass
+                self.connectionName = di.getString()
             elif message_type == types.CONTROL_SET_CON_URL:
-                pass
+                self.connectionURL = di.getString()
             elif message_type == types.CONTROL_ADD_RANGE:
                 pass
             elif message_type == types.CONTROL_REMOVE_RANGE:
@@ -84,13 +69,15 @@ class Participant(io.NetworkHandler):
                 io.NetworkDatagram(Datagram(di.get_remaining_bytes())))
 
     def handle_disconnected(self):
-        self.network.message_interface.flush_post_handles(self.channel)
-        self.network.interface.remove_participant(self.channel)
+        self.network.message_interface.flush_post_handles(self.connectionHost)
+        self.network.interface.remove_participant(self.connectionHost)
         io.NetworkHandler.handle_disconnected(self)
 
     def shutdown(self):
         self.allocated_channel = 0
-        self.channel = 0
+        self.connectionName = ""
+        self.connectionURL = ""
+        self.connectionHost = 0
         io.NetworkHandler.shutdown(self)
 
 class ParticipantInterface(object):

@@ -5,7 +5,6 @@ from realtime import io
 from realtime import types
 from realtime.notifier import notify
 
-
 class DatabaseInterface(object):
     notify = notify.new_category('NetworkDatabaseInterface')
 
@@ -40,8 +39,8 @@ class DatabaseInterface(object):
         for k,v in fields.items():
             field = dclass.get_field_by_name(k)
             if not field:
-                self.notify.error('Creation request for %s object contains an invalid field named %s' % (
-                    dclass.get_name(), k))
+                self.notify.error('Creation request for %s object contains an invalid field named %s' % (dclass.get_name(), k))
+                return
 
             field_packer.raw_pack_uint16(field.get_number())
             field_packer.begin_pack(field)
@@ -63,9 +62,7 @@ class DatabaseInterface(object):
         do_id = di.get_uint32()
 
         if ctx not in self._callbacks:
-            self.notify.warning('Received unexpected DBSERVER_CREATE_OBJECT_RESP (ctx %d, do_id %d)' % (
-                ctx, do_id))
-
+            self.notify.warning('Received unexpected DBSERVER_CREATE_OBJECT_RESP (ctx %d, do_id %d)' % (ctx, do_id))
             return
 
         if self._callbacks[ctx]:
@@ -108,8 +105,8 @@ class DatabaseInterface(object):
         for field_name in field_names:
             field = dclass.get_field_by_name(field_name)
             if field is None:
-                self.notify.error('Bad field named %s in query for %s object' % (
-                    field_name, dclass.get_name()))
+                self.notify.error('Bad field named %s in query for %s object' % (field_name, dclass.get_name()))
+                return
 
             dg.add_uint16(field.get_number())
 
@@ -120,16 +117,13 @@ class DatabaseInterface(object):
         success = di.get_uint8()
 
         if ctx not in self._callbacks:
-            self.notify.warning('Received unexpected %s (ctx %d)' % (
-                MsgId2Names[message_type], ctx))
-
+            self.notify.warning('Received unexpected %s (ctx %d)' % (MsgId2Names[message_type], ctx))
             return
 
         try:
             if not success:
                 if self._callbacks[ctx]:
                     self._callbacks[ctx](None, None)
-
                 return
 
             if message_type == types.DBSERVER_OBJECT_GET_ALL_RESP:
@@ -139,8 +133,7 @@ class DatabaseInterface(object):
                 dclass = self._dclasses[ctx]
 
             if not dclass:
-                self.notify.error('Received bad dclass %d in DBSERVER_OBJECT_GET_ALL_RESP' % (
-                    dclass_id))
+                self.notify.error('Received bad dclass %d in DBSERVER_OBJECT_GET_ALL_RESP' % (dclass_id))
 
             if message_type == types.DBSERVER_OBJECT_GET_FIELD_RESP:
                 field_count = 1
@@ -155,8 +148,7 @@ class DatabaseInterface(object):
                 field = dclass.get_field_by_index(field_id)
 
                 if not field:
-                    self.notify.error('Received bad field %d in query for %s object' % (
-                        field_id, dclass.get_name()))
+                    self.notify.error('Received bad field %d in query for %s object' % (field_id, dclass.get_name()))
 
                 field_packer.begin_unpack(field)
                 fields[field.get_name()] = field.unpack_args(field_packer)
@@ -199,8 +191,7 @@ class DatabaseInterface(object):
         for k,v in new_fields.items():
             field = dclass.get_field_by_name(k)
             if not field:
-                self.notify.error('Update for %s(%d) object contains invalid field named %s' % (
-                    dclass.get_name(), do_id, k))
+                self.notify.error('Update for %s(%d) object contains invalid field named %s' % (dclass.get_name(), do_id, k))
 
             field_packer.raw_pack_uint16(field.get_number())
 
@@ -249,16 +240,13 @@ class DatabaseInterface(object):
         success = di.get_uint8()
 
         if ctx not in self._callbacks:
-            self.notify.warning('Received unexpected DBSERVER_OBJECT_SET_FIELD(S)_IF_EQUALS_RESP (ctx %d)' % (
-                ctx))
-
+            self.notify.warning('Received unexpected DBSERVER_OBJECT_SET_FIELD(S)_IF_EQUALS_RESP (ctx %d)' % (ctx))
             return
 
         try:
             if success:
                 if self._callbacks[ctx]:
                     self._callbacks[ctx](None)
-
                 return
 
             if not di.get_remaining_size():
@@ -279,8 +267,7 @@ class DatabaseInterface(object):
                 field = self._network.dc_loader.dc_file.get_field_by_index(fieldId)
 
                 if not field:
-                    self.notify.error('Received bad field %d in update failure response message' % (
-                        fieldId))
+                    self.notify.error('Received bad field %d in update failure response message' % (fieldId))
 
                 field_packer.begin_unpack(field)
                 fields[field.get_name()] = field.unpack_args(field_packer)

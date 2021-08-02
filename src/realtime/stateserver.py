@@ -283,7 +283,7 @@ class StateObject(object):
         self.object_manager.handle_changing_location(self)
 
     def handle_internal_datagram(self, sender, message_type, di):
-        if message_type == types.STATESERVER_OBJECT_SET_OWNER:
+        if message_type == types.STATESERVER_OBJECT_SET_OWNER_RECV:
             self.handle_set_owner(sender, di)
         elif message_type == types.STATESERVER_OBJECT_SET_AI:
             self.handle_set_ai(sender, di)
@@ -300,15 +300,12 @@ class StateObject(object):
         elif message_type == types.STATESERVER_OBJECT_CLEAR_WATCH:
             self.handle_clear_watch(sender, di)
         else:
-            self.notify.warning('Received unknown message type: %d '
-                'for object %d!' % (message_type, self._do_id))
-
+            self.notify.warning('Received unknown message type: %d for object %d!' % (message_type, self._do_id))
             return
 
     def handle_send_changing_owner(self, channel, old_owner_id, new_owner_id):
         datagram = io.NetworkDatagram()
-        datagram.add_header(channel, self._do_id,
-            types.STATESERVER_OBJECT_CHANGING_OWNER)
+        datagram.add_header(channel, self._do_id, types.STATESERVER_OBJECT_CHANGE_OWNER_RECV)
 
         datagram.add_uint64(self._do_id)
         datagram.add_uint64(new_owner_id)
@@ -317,13 +314,8 @@ class StateObject(object):
 
     def handle_send_owner_entry(self, channel):
         datagram = io.NetworkDatagram()
-        if not self._has_other:
-            datagram.add_header(channel, self._do_id,
-                types.STATESERVER_OBJECT_ENTER_OWNER_WITH_REQUIRED)
-        else:
-            datagram.add_header(channel, self._do_id,
-                types.STATESERVER_OBJECT_ENTER_OWNER_WITH_REQUIRED_OTHER)
-
+        
+        datagram.add_header(channel, self._do_id, types.STATESERVER_OBJECT_ENTER_OWNER_RECV)
         datagram.add_uint64(self._do_id)
         datagram.add_uint64(self._parent_id)
         datagram.add_uint32(self._zone_id)
@@ -346,8 +338,7 @@ class StateObject(object):
 
     def handle_send_changing_ai(self, channel):
         datagram = io.NetworkDatagram()
-        datagram.add_header(channel, self._do_id,
-            types.STATESERVER_OBJECT_CHANGING_AI)
+        datagram.add_header(channel, self._do_id, types.STATESERVER_OBJECT_CHANGING_AI)
 
         datagram.add_uint64(self._do_id)
         datagram.add_uint64(self._old_ai_channel)
@@ -357,11 +348,9 @@ class StateObject(object):
     def handle_send_ai_entry(self, ai_channel):
         datagram = io.NetworkDatagram()
         if not self._has_other:
-            datagram.add_header(ai_channel, self._do_id,
-                types.STATESERVER_OBJECT_ENTER_AI_WITH_REQUIRED)
+            datagram.add_header(ai_channel, self._do_id, types.STATESERVER_OBJECT_ENTER_AI_WITH_REQUIRED)
         else:
-            datagram.add_header(ai_channel, self._do_id,
-                types.STATESERVER_OBJECT_ENTER_AI_WITH_REQUIRED_OTHER)
+            datagram.add_header(ai_channel, self._do_id, types.STATESERVER_OBJECT_ENTER_AI_WITH_REQUIRED_OTHER)
 
         datagram.add_uint64(self._do_id)
         datagram.add_uint64(self._parent_id)
@@ -403,29 +392,54 @@ class StateObject(object):
         self.object_manager.handle_changing_location(self)
 
     def handle_send_changing_location(self, channel):
+        if sender != self.owner_id:
+            if self.old_parent_id == self.parent_id:
+                datagram = io.NetworkDatagram()
+                datagram.add_header(channel, self._do_id, types.STATESERVER_OBJECT_CHANGE_ZONE)
+                datagram.add_uint32(self._do_id)
+                datagram.add_uint32(self.parent_id)
+                datagram.add_uint32(self.zone_id)
+                datagram.add_uint32(self.old_parent_id)
+                datagram.add_uint32(self.old_zone_id)
+                self._network.handle_send_connection_datagram(datagram)
+                return
+        
+        # Delete the old object.
+        self.handle_send_departure(channel)
+        
+        # Send a required other enter zone response.
         datagram = io.NetworkDatagram()
-        datagram.add_header(channel, self._do_id,
-            types.STATESERVER_OBJECT_CHANGING_LOCATION)
-
+        datagram.add_header(channel, self._do_id, types.STATESERVER_OBJECT_ENTERZONE_WITH_REQUIRED_OTHER)
+        datagram.add_uint32(self.parent_id)
+        datagram.add_uint32(self.zone_id)
+        datagram.add_uint16(self._dc_class.get_number())
         datagram.add_uint32(self._do_id)
-        datagram.add_uint32(self._parent_id)
-        datagram.add_uint32(self._zone_id)
-        self._network.handle_send_connection_datagram(datagram)
+        
+        self.append_required_data(datagram, broadcast_only=not self._owner_id)
+        if self._has_other:
+            self.append_other_data(datagram)
 
+        self._network.handle_send_connection_datagram(datagram)
+        
     def handle_set_zone(self, sender, di):
+        self.old_parent_id = self.parent_id
+        self.old_zone_id = self.zone_id
+        
+        new_parent_id = di.get_uint32()
         new_zone_id = di.get_uint32()
+        
+        self.parent_id = new_parent_id
         self.zone_id = new_zone_id
+        
         self.handle_send_changing_location(self._ai_channel)
         self.object_manager.handle_changing_location(self)
 
     def handle_send_location_entry(self, channel):
         datagram = io.NetworkDatagram()
         if not self._has_other:
-            datagram.add_header(channel, self._do_id,
-                types.STATESERVER_OBJECT_ENTER_LOCATION_WITH_REQUIRED)
+            datagram.add_header(channel, self._do_id, types.STATESERVER_OBJECT_ENTER_LOCATION_WITH_REQUIRED)
         else:
-            datagram.add_header(channel, self._do_id,
-                types.STATESERVER_OBJECT_ENTER_LOCATION_WITH_REQUIRED_OTHER)
+            datagram.add_header(channel, self._do_id, types.STATESERVER_OBJECT_ENTER_LOCATION_WITH_REQUIRED_OTHER)
 
         datagram.add_uint64(self._do_id)
         datagram.add_uint64(self._parent_id)
@@ -448,8 +462,7 @@ class StateObject(object):
 
     def handle_send_object_location_ack(self, channel):
         datagram = io.NetworkDatagram()
-        datagram.add_header(channel, self._do_id,
-            types.STATESERVER_OBJECT_LOCATION_ACK)
+        datagram.add_header(channel, self._do_id, types.STATESERVER_OBJECT_LOCATION_ACK)
 
         datagram.add_uint32(self._do_id)
         datagram.add_uint32(self._old_parent_id)

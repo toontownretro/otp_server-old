@@ -157,16 +157,14 @@ class LoadAccountFSM(ClientOperation):
 
         self._account_id = int(self.manager.dbm[self._play_token])
         self.manager.network.database_interface.query_object(self.client.channel,
-            types.DATABASE_CHANNEL,
+            types.DBSERVER_ID,
             self._account_id,
             self.__account_loaded,
             self.manager.network.dc_loader.dclasses_by_name['Account'])
 
     def __account_loaded(self, dclass, fields):
         if not dclass and not fields:
-            self.notify.warning('Failed to load account: %d for channel: %d playtoken: %s!' % (
-                self._account_id, self._client.channel, self._play_token))
-
+            self.notify.warning('Failed to load account: %d for channel: %d playtoken: %s!' % (self._account_id, self._client.channel, self._play_token))
             return
 
         self.request('SetAccount')
@@ -177,20 +175,18 @@ class LoadAccountFSM(ClientOperation):
     def enterCreate(self):
         fields = {
             'ACCOUNT_AV_SET': ([0] * 6,),
-            'BIRTH_DATE': ('',),
-            'BLAST_NAME': (self._play_token,),
+            'pirateAvatars': ([0] * 6,),
+            'HOUSE_ID_SET': ([]),
+            'ESTATE_ID': (0,),
+            'ACCOUNT_AV_SET_DEL': ([[],],),
+            'PLAYED_MINUTES': ("",),
+            'PLAYED_MINUTES_PERIOD': ("",),
             'CREATED': (time.ctime(),),
-            'FIRST_NAME': ('',),
-            'LAST_LOGIN': ('',),
-            'LAST_NAME': ('',),
-            'PLAYED_MINUTES': ('',),
-            'PLAYED_MINUTES_PERIOD': ('',),
-            'HOUSE_ID_SET': ([0] * 6,),
-            'ESTATE_ID': (0,)
+            'LAST_LOGIN': ("",)
         }
 
         self.manager.network.database_interface.create_object(self.client.channel,
-            types.DATABASE_CHANNEL,
+            types.DBSERVER_ID,
             self.manager.network.dc_loader.dclasses_by_name['Account'],
             fields=fields,
             callback=self.__account_created)
@@ -198,9 +194,7 @@ class LoadAccountFSM(ClientOperation):
     def __account_created(self, account_id):
         self._account_id = account_id
         if not self._account_id:
-            self.notify.warning('Failed to create account for channel: %d playtoken: %s!' % (
-                self._client.channel, self._play_token))
-
+            self.notify.warning('Failed to create account for channel: %d playtoken: %s!' % (self._client.channel, self._play_token))
             self.cleanup(False)
             return
 
@@ -292,7 +286,7 @@ class RetrieveAvatarsFSM(ClientOperation):
 
     def enterStart(self):
         self.manager.network.database_interface.query_object(self.client.channel,
-            types.DATABASE_CHANNEL,
+            types.DBSERVER_ID,
             self._account_id,
             self.__account_loaded,
             self.manager.network.dc_loader.dclasses_by_name['Account'])
@@ -315,7 +309,7 @@ class RetrieveAvatarsFSM(ClientOperation):
                     self.request('SetAvatars')
 
             self.manager.network.database_interface.query_object(self.client.channel,
-                types.DATABASE_CHANNEL,
+                types.DBSERVER_ID,
                 avatar_id,
                 response,
                 self.manager.network.dc_loader.dclasses_by_name['DistributedToon'])
@@ -358,14 +352,14 @@ class CreateAvatarFSM(ClientOperation):
         }
 
         self.manager.network.database_interface.create_object(self.client.channel,
-            types.DATABASE_CHANNEL,
+            types.DBSERVER_ID,
             self.manager.network.dc_loader.dclasses_by_name['DistributedToon'],
             fields=fields,
             callback=lambda avatar_id: self.__avatar_created(avatar_id, self._index))
 
     def __avatar_created(self, avatar_id, index):
         self.manager.network.database_interface.query_object(self.client.channel,
-            types.DATABASE_CHANNEL,
+            types.DBSERVER_ID,
             self._account_id,
             lambda dclass, fields: self.__account_loaded(dclass, fields, avatar_id, index),
             self.manager.network.dc_loader.dclasses_by_name['Account'])
@@ -379,7 +373,7 @@ class CreateAvatarFSM(ClientOperation):
         }
 
         self.manager.network.database_interface.update_object(self.client.channel,
-            types.DATABASE_CHANNEL,
+            types.DBSERVER_ID,
             self._account_id,
             self.manager.network.dc_loader.dclasses_by_name['Account'],
             new_fields)
@@ -410,7 +404,7 @@ class LoadAvatarFSM(ClientOperation):
             self.request('Activate')
 
         self.manager.network.database_interface.query_object(self.client.channel,
-            types.DATABASE_CHANNEL,
+            types.DBSERVER_ID,
             self._avatar_id,
             response,
             self.manager.network.dc_loader.dclasses_by_name['DistributedToon'])
@@ -490,7 +484,7 @@ class LoadAvatarFSM(ClientOperation):
         # grant ownership over the distributed object...
         datagram = io.NetworkDatagram()
         datagram.add_header(self._avatar_id, channel,
-            types.STATESERVER_OBJECT_SET_OWNER)
+            types.STATESERVER_OBJECT_SET_OWNER_RECV)
 
         datagram.add_uint64(channel)
         self.manager.network.handle_send_connection_datagram(datagram)
@@ -539,7 +533,7 @@ class LoadFriendsListFSM(ClientOperation):
             self.request('QueryFriends')
 
         self.manager.network.database_interface.query_object(self.client.channel,
-            types.DATABASE_CHANNEL,
+            types.DBSERVER_ID,
             self._avatar_id,
             response,
             self.manager.network.dc_loader.dclasses_by_name['DistributedToon'])
@@ -564,7 +558,7 @@ class LoadFriendsListFSM(ClientOperation):
                     self.request('LoadFriends')
 
             self.manager.network.database_interface.query_object(self.client.channel,
-                types.DATABASE_CHANNEL,
+                types.DBSERVER_ID,
                 friend_id,
                 queryFriendCallback,
                 self.manager.network.dc_loader.dclasses_by_name['DistributedToon'])
@@ -658,7 +652,7 @@ class SetNameFSM(ClientOperation):
             self.request('SetName')
 
         self.manager.network.database_interface.query_object(self.client.channel,
-            types.DATABASE_CHANNEL,
+            types.DBSERVER_ID,
             self._avatar_id,
             response,
             self.manager.network.dc_loader.dclasses_by_name['DistributedToon'])
@@ -677,7 +671,7 @@ class SetNameFSM(ClientOperation):
         #self.notify.warning("New fields are \n%s" % (str(self._fields)))
 
         self.manager.network.database_interface.update_object(self.client.channel,
-            types.DATABASE_CHANNEL,
+            types.DBSERVER_ID,
             self._avatar_id,
             self.manager.network.dc_loader.dclasses_by_name['DistributedToon'],
             new_fields)
@@ -707,7 +701,7 @@ class GetAvatarDetailsFSM(ClientOperation):
             self.request('SendDetails')
 
         self.manager.network.database_interface.query_object(self.client.channel,
-            types.DATABASE_CHANNEL,
+            types.DBSERVER_ID,
             self._avatar_id,
             response,
             self.manager.network.dc_loader.dclasses_by_name['DistributedToon'])
@@ -773,7 +767,7 @@ class DeleteAvatarFSM(ClientOperation):
 
     def enterStart(self):
         self.manager.network.database_interface.query_object(self.client.channel,
-            types.DATABASE_CHANNEL,
+            types.DBSERVER_ID,
             self._account_id,
             self.__account_loaded,
             self.manager.network.dc_loader.dclasses_by_name['Account'])
@@ -796,7 +790,7 @@ class DeleteAvatarFSM(ClientOperation):
                     self.request('ApplyAvatars')
 
             self.manager.network.database_interface.query_object(self.client.channel,
-                types.DATABASE_CHANNEL,
+                types.DBSERVER_ID,
                 avatar_id,
                 response,
                 self.manager.network.dc_loader.dclasses_by_name['DistributedToon'])
@@ -823,7 +817,7 @@ class DeleteAvatarFSM(ClientOperation):
             self.demand('SetAvatars')
 
         self.manager.network.database_interface.update_object(self.client.channel,
-            types.DATABASE_CHANNEL,
+            types.DBSERVER_ID,
             self._account_id,
             self.manager.network.dc_loader.dclasses_by_name['Account'],
             new_fields,
@@ -873,7 +867,7 @@ class SetAvatarZonesFSM(ClientOperation):
             self.request('SetField')
 
         self.manager.network.database_interface.query_object(self.client.channel,
-            types.DATABASE_CHANNEL,
+            types.DBSERVER_ID,
             self._avatar_id,
             response,
             self.manager.network.dc_loader.dclasses_by_name['DistributedToon'])
@@ -895,7 +889,7 @@ class SetAvatarZonesFSM(ClientOperation):
         }
 
         self.manager.network.database_interface.update_object(self.client.channel,
-            types.DATABASE_CHANNEL,
+            types.DBSERVER_ID,
             self._avatar_id,
             self.manager.network.dc_loader.dclasses_by_name['DistributedToon'],
             new_fields)
@@ -905,7 +899,7 @@ class SetAvatarZonesFSM(ClientOperation):
         }
 
         self.manager.network.database_interface.update_object(self.client.channel,
-            types.DATABASE_CHANNEL,
+            types.DBSERVER_ID,
             self._avatar_id,
             self.manager.network.dc_loader.dclasses_by_name['DistributedToon'],
             new_fields)
@@ -915,7 +909,7 @@ class SetAvatarZonesFSM(ClientOperation):
         }
 
         self.manager.network.database_interface.update_object(self.client.channel,
-            types.DATABASE_CHANNEL,
+            types.DBSERVER_ID,
             self._avatar_id,
             self.manager.network.dc_loader.dclasses_by_name['DistributedToon'],
             new_fields)
@@ -952,7 +946,7 @@ class SetNamePatternFSM(ClientOperation):
             self.request('SetPatternName')
 
         self.manager.network.database_interface.query_object(self.client.channel,
-            types.DATABASE_CHANNEL,
+            types.DBSERVER_ID,
             self._avatar_id,
             response,
             self.manager.network.dc_loader.dclasses_by_name['DistributedToon'])
@@ -991,7 +985,7 @@ class SetNamePatternFSM(ClientOperation):
         #self.notify.warning("New fields are \n%s" % (str(self._fields)))
 
         self.manager.network.database_interface.update_object(self.client.channel,
-            types.DATABASE_CHANNEL,
+            types.DBSERVER_ID,
             self._avatar_id,
             self.manager.network.dc_loader.dclasses_by_name['DistributedToon'],
             new_fields)
@@ -1258,8 +1252,7 @@ class Client(io.NetworkHandler):
         io.NetworkHandler.startup(self)
 
     def handle_send_disconnect(self, code, reason):
-        self.notify.warning('Disconnecting channel: %d, reason: %s' % (
-            self.channel, reason))
+        self.notify.warning('Disconnecting channel: %d, reason: %s' % (self.channel, reason))
 
         datagram = io.NetworkDatagram()
         datagram.add_uint16(types.CLIENT_GO_GET_LOST)
@@ -1273,27 +1266,23 @@ class Client(io.NetworkHandler):
         try:
             message_type = di.get_uint16()
         except:
-            self.handle_send_disconnect(types.CLIENT_DISCONNECT_TRUNCATED_DATAGRAM,
-                'Received truncated datagram from channel: %d!' % (
-                    self._channel))
-
+            self.handle_send_disconnect(types.CLIENT_DISCONNECT_TRUNCATED_DATAGRAM, 'Received truncated datagram from channel: %d!' % (self._channel))
             return
 
         if message_type == types.CLIENT_HEARTBEAT:
             pass
-        elif message_type == types.CLIENT_LOGIN_2 or message_type == 125: #125 == CLIENT_LOGIN_TOONTOWN
-            self.handle_login(di, message_type == 125)
+        elif message_type == types.CLIENT_LOGIN:
+            self.handle_login(di)
+        elif message_type == types.CLIENT_LOGIN_2:
+            self.handle_login_2(di)
+        elif message_type == 125: #125 == CLIENT_LOGIN_TOONTOWN
+            self.handle_login_toontown(di)
         elif message_type == types.CLIENT_DISCONNECT:
             self.handle_disconnect()
+        elif self._authenticated:
+            self.handle_authenticated_datagram(message_type, di)
         else:
-            if not self._authenticated:
-                self.handle_send_disconnect(types.CLIENT_DISCONNECT_ANONYMOUS_VIOLATION,
-                    'Cannot send datagram with message type: %d, channel: %d not yet authenticated!' % (
-                        message_type, self.channel))
-
-                return
-            else:
-                self.handle_authenticated_datagram(message_type, di)
+            self.handle_send_disconnect(types.CLIENT_DISCONNECT_ANONYMOUS_VIOLATION, 'Cannot send datagram with message type: %d, channel: %d not yet authenticated!' % (message_type, self.channel))
 
     def handle_authenticated_datagram(self, message_type, di):
         if message_type == types.CLIENT_GET_SHARD_LIST:
@@ -1329,10 +1318,7 @@ class Client(io.NetworkHandler):
         elif message_type == types.CLIENT_OBJECT_LOCATION:
             self.handle_client_object_location(di)
         else:
-            self.handle_send_disconnect(types.CLIENT_DISCONNECT_INVALID_MSGTYPE,
-                'Unknown datagram: %d from channel: %d!' % (
-                    message_type, self.channel))
-
+            self.handle_send_disconnect(types.CLIENT_DISCONNECT_INVALID_MSGTYPE, 'Unknown datagram: %d from channel: %d!' % (message_type, self.channel))
             return
 
     def handle_internal_datagram(self, message_type, sender, di):
@@ -1654,71 +1640,131 @@ class Client(io.NetworkHandler):
         
     def is_my_avatar(self, doId):
         return doId == self.get_avatar_id_from_connection_channel(self.channel)
+        
+    def handle_login(self, di):
+        try:
+            login_name = di.get_string() # Login Name
+            ip_address = di.get_uint32() # IP Address - Depreciated
+            udp_port = di.get_uint16() # Port - Depreciated
+            server_version = di.get_string() # Server Version
+            hash_val = di.get_uint32() # DC Hash
+            password = di.get_string() # Password
+            create_account = di.get_bool() # Allow Account Creation Flag
+            priv_string = di.get_string() # Privilege String
+            dislid = di.get_uint32() # DISL Id
+            otp_whitelist = di.get_string() # OTP_WHITELIST Priv String, If YES. Whitelist is enabled internally by the OTP.
+        except:
+            self.handle_send_disconnect(types.CLIENT_DISCONNECT_TRUNCATED_DATAGRAM, 'Received truncated datagram from channel: %d!' % (self._channel))
+            return
+
+        if server_version != self.network.server_version:
+            self.handle_send_disconnect(types.CLIENT_DISCONNECT_BAD_VERSION, 'Invalid server version: %s, expected: %s!' % (server_version, self.network.server_version))
+            return
+
+        if hash_val != self.network.server_hash_val and 0: # Disabled for testing with EXE
+            self.handle_send_disconnect(types.CLIENT_DISCONNECT_BAD_DCHASH, 'Got an invalid dc hash value: %d expected: %d!' % (hash_val, self.network.server_hash_val))
+            return
+
+        callback = lambda: self.__handle_login_resp(login_name)
+        self.network.account_manager.handle_operation(LoadAccountFSM, self, callback, login_name)
+        
+    def __handle_login_resp(self, play_token):
+        datagram = io.NetworkDatagram()
+        datagram.add_uint16(types.CLIENT_LOGIN_RESP)
+        datagram.add_uint8(0) # Return Code
+        datagram.add_uint32(0) # Account Id
+        datagram.add_string('') # Error Text
+        datagram.add_uint32(int(time.time())) # Epoch Sec - Depreciated
+        datagram.add_uint32(int(time.clock())) # Epoch Usec - Depreciated
+        self.handle_send_datagram(datagram)
             
-    def handle_login(self, di, loginTT = False):
+    def handle_login_2(self, di):
         try:
             play_token = di.get_string()
             server_version = di.get_string()
             hash_val = di.get_uint32()
             token_type = di.get_int32()
+            check_hash_val = di.get_string()
+            priv_string = di.get_string()
         except:
-            self.handle_send_disconnect(types.CLIENT_DISCONNECT_TRUNCATED_DATAGRAM,
-                'Received truncated datagram from channel: %d!' % (
-                    self._channel))
-
+            self.handle_send_disconnect(types.CLIENT_DISCONNECT_TRUNCATED_DATAGRAM, 'Received truncated datagram from channel: %d!' % (self._channel))
             return
 
-        if server_version != self.network.server_version and server_version != "sv1.0.47.38":
-            self.handle_send_disconnect(types.CLIENT_DISCONNECT_BAD_VERSION,
-                'Invalid server version: %s, expected: %s!' % (
-                    server_version, self.network.server_version))
-
+        if server_version != self.network.server_version:
+            self.handle_send_disconnect(types.CLIENT_DISCONNECT_BAD_VERSION, 'Invalid server version: %s, expected: %s!' % (server_version, self.network.server_version))
             return
 
         if hash_val != self.network.server_hash_val and 0: # Disabled for testing with EXE
-            self.handle_send_disconnect(types.CLIENT_DISCONNECT_BAD_DCHASH,
-                'Got an invalid dc hash value: %d expected: %d!' % (
-                    hash_val, self.network.server_hash_val))
-
+            self.handle_send_disconnect(types.CLIENT_DISCONNECT_BAD_DCHASH, 'Got an invalid dc hash value: %d expected: %d!' % (hash_val, self.network.server_hash_val))
             return
 
-        if token_type != types.CLIENT_LOGIN_2_BLUE and token_type != 4:
-            self.handle_send_disconnect(types.CLIENT_DISCONNECT_INVALID_PLAY_TOKEN_TYPE,
-                'Invalid play token type: %d!' % (
-                    token_type))
-
+        if token_type != types.CLIENT_LOGIN_2_PLAY_TOKEN:
+            self.handle_send_disconnect(types.CLIENT_DISCONNECT_INVALID_PLAY_TOKEN_TYPE, 'Invalid or unsupported play token type: %d!' % (token_type))
             return
 
-        callback = lambda: self.__handle_login_resp(play_token, loginTT)
+        callback = lambda: self.__handle_login_2_resp(play_token)
         self.network.account_manager.handle_operation(LoadAccountFSM, self, callback, play_token)
 
-    def __handle_login_resp(self, play_token, loginTT = False):
+    def __handle_login_2_resp(self, play_token):
         datagram = io.NetworkDatagram()
-        datagram.add_uint16(types.CLIENT_LOGIN_2_RESP if not loginTT else 126)
+        datagram.add_uint16(types.CLIENT_LOGIN_2_RESP)
+        datagram.add_uint8(0) # Return Code
+        datagram.add_string('All Ok') # Response String
+        datagram.add_string(play_token) # Account Name
+        datagram.add_uint8(1) # Chat Code
+        datagram.add_uint32(int(time.time())) # Current Time (SEC) - Depreciated
+        datagram.add_uint32(int(time.clock())) # Current Time (USECS) - Depreciated
+        datagram.add_uint8(1) # Paid Flag
+        datagram.add_int32(1000 * 60 * 60) # Remaining Minutes
+        self.handle_send_datagram(datagram)
+        
+    def handle_login_toontown(self, di):
+        try:
+            play_token = di.get_string()
+            server_version = di.get_string()
+            hash_val = di.get_uint32()
+            token_type = di.get_int32()
+            #check_hash_val = di.get_string() - Removed
+            priv_string = di.get_string()
+        except:
+            self.handle_send_disconnect(types.CLIENT_DISCONNECT_TRUNCATED_DATAGRAM, 'Received truncated datagram from channel: %d!' % (self._channel))
+            return
+
+        if server_version != self.network.server_version:
+            self.handle_send_disconnect(types.CLIENT_DISCONNECT_BAD_VERSION, 'Invalid server version: %s, expected: %s!' % (server_version, self.network.server_version))
+            return
+
+        if hash_val != self.network.server_hash_val and 0: # Disabled for testing with EXE
+            self.handle_send_disconnect(types.CLIENT_DISCONNECT_BAD_DCHASH, 'Got an invalid dc hash value: %d expected: %d!' % (hash_val, self.network.server_hash_val))
+            return
+
+        if token_type != types.CLIENT_LOGIN_2_PLAY_TOKEN:
+            self.handle_send_disconnect(types.CLIENT_DISCONNECT_INVALID_PLAY_TOKEN_TYPE, 'Invalid or unsupported play token type: %d!' % (token_type))
+            return
+
+        callback = lambda: self.__handle_login_toontown_resp(play_token)
+        self.network.account_manager.handle_operation(LoadAccountFSM, self, callback, play_token)
+        
+        
+    def __handle_login_toontown_resp(self, play_token):
+        datagram = io.NetworkDatagram()
+        datagram.add_uint16(126)
         datagram.add_uint8(0)
         datagram.add_string('All Ok')
-        if loginTT:
-            datagram.add_uint32(0) # account number
-            datagram.add_string("") # account name
-            datagram.add_uint8(1) # account name approved
-            datagram.add_string("YES") # open chat enabled
-            datagram.add_string("YES") # create friends with chat
-            datagram.add_string("") # chat code creation rule ?
-            datagram.add_uint32(int(time.time())) # sec
-            datagram.add_uint32(int(time.clock())) # usec
-            datagram.add_string("FULL") # access
-            datagram.add_string("YES") # whitelist enabled
-            datagram.add_string("") # last logged in
-            datagram.add_int32(100000) # account days
-            datagram.add_string("WITH_PARENT_ACCOUNT")
-            datagram.add_string("") # username
-        else:
-            datagram.add_string(play_token)
-            datagram.add_uint8(1)
-            datagram.add_uint32(int(time.time()))
-            datagram.add_uint32(int(time.clock()))
-            datagram.add_uint8(1)
-            datagram.add_int32(1000 * 60 * 60)
+        datagram.add_uint32(0) # account number
+        datagram.add_string("") # account name
+        datagram.add_uint8(1) # account name approved
+        datagram.add_string("YES") # open chat enabled
+        datagram.add_string("YES") # create friends with chat
+        datagram.add_string("") # chat code creation rule ?
+        datagram.add_uint32(int(time.time())) # sec
+        datagram.add_uint32(int(time.clock())) # usec
+        datagram.add_string("FULL") # access
+        datagram.add_string("YES") # whitelist enabled
+        datagram.add_string("") # last logged in
+        datagram.add_int32(100000) # account days
+        datagram.add_string("WITH_PARENT_ACCOUNT")
+        datagram.add_string("") # username
         self.handle_send_datagram(datagram)
 
     def handle_get_shard_list(self):
@@ -2249,7 +2295,7 @@ class ClientAgent(io.NetworkListener, io.NetworkConnector):
         max_channels = config.GetInt('clientagent-max-channels', 1009999999)
 
         self._channel_allocator = UniqueIdAllocator(min_channels, max_channels - 1)
-        self._server_version = config.GetString('clientagent-version', 'no-version')
+        self._server_version = config.GetString('clientagent-version', 'dev')
         self._server_hash_val = int(config.GetString('clientagent-hash-val', '0'))
 
         self._database_interface = util.DatabaseInterface(self)

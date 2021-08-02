@@ -1,3 +1,5 @@
+# -*- coding: UTF-8 -*-
+
 """
  * Copyright (C) Caleb Marshall - All Rights Reserved
  * Written by Caleb Marshall <anythingtechpro@gmail.com>, August 17th, 2017
@@ -47,13 +49,14 @@ CONTROL_MESSAGE =               4001
 CONTROL_SET_CHANNEL =           2001
 CONTROL_REMOVE_CHANNEL =        2002
 
-CONTROL_SET_CON_NAME = 2004
-CONTROL_SET_CON_URL  = 2005
+CONTROL_SET_CON_NAME =          2004
+CONTROL_SET_CON_URL =           2005
 
-CONTROL_ADD_RANGE   =         2008
-CONTROL_REMOVE_RANGE  =       2009
-CONTROL_ADD_POST_REMOVE =     2010 # ADD A MESSAGE TO THE CLOSING EVENT ON A DIRECTOR SOCKET
-CONTROL_CLEAR_POST_REMOVE =   2011 # CLEAR ALL THE EVENTS..
+CONTROL_ADD_RANGE =             2008
+CONTROL_REMOVE_RANGE =          2009
+
+CONTROL_ADD_POST_REMOVE =       2010 # ADD A MESSAGE TO THE CLOSING EVENT ON A DIRECTOR SOCKET
+CONTROL_CLEAR_POST_REMOVE =     2011 # CLEAR ALL THE EVENTS..
 
 # State Server Transactions
 STATESERVER_OBJECT_GENERATE_WITH_REQUIRED =                2001
@@ -107,16 +110,11 @@ STATESERVER_OBJECT_ENTER_LOCATION_WITH_REQUIRED =          2090
 STATESERVER_OBJECT_ENTER_LOCATION_WITH_REQUIRED_OTHER =    2091
 STATESERVER_OBJECT_ENTER_AI_WITH_REQUIRED =                2092
 STATESERVER_OBJECT_ENTER_AI_WITH_REQUIRED_OTHER =          2093
-STATESERVER_OBJECT_SET_OWNER =                             2094
-STATESERVER_OBJECT_CHANGING_OWNER =                        2095
-STATESERVER_OBJECT_SET_LOCATION =                          2096
 STATESERVER_OBJECT_CHANGING_LOCATION =                     2097
 STATESERVER_OBJECT_LOCATION_ACK =                          2098
 STATESERVER_OBJECT_SET_AI =                                2099
 STATESERVER_OBJECT_SET_AI_RESP =                           2100
 STATESERVER_OBJECT_CHANGING_AI =                           2101
-STATESERVER_OBJECT_ENTER_OWNER_WITH_REQUIRED =             2102
-STATESERVER_OBJECT_ENTER_OWNER_WITH_REQUIRED_OTHER =       2103
 STATESERVER_OBJECT_GET_ZONES_OBJECTS =                     2104
 STATESERVER_OBJECT_GET_ZONES_OBJECTS_RESP =                2105
 STATESERVER_OBJECT_GET_ZONES_OBJECTS_2 =                   2106
@@ -261,24 +259,62 @@ CLIENT_LOGIN_TOONTOWN = 125
 CLIENT_LOGIN_TOONTOWN_RESP = 126
 
 # Login 2 Types
-CLIENT_LOGIN_2_GREEN = 1
-CLIENT_LOGIN_2_PLAY_TOKEN = 2
-CLIENT_LOGIN_2_BLUE = 3
+CLIENT_LOGIN_2_GREEN = 1       # Disney's GoReg subscription token, not used.
+CLIENT_LOGIN_2_PLAY_TOKEN = 2  # VR Studio PlayToken.
+CLIENT_LOGIN_2_BLUE = 3        # The international GoReg token.
+CLIENT_LOGIN_3_DISL_TOKEN = 4  # SSL encoded blob from DISL system.
+
+# Interal Disconnect Types
+CLIENT_DISCONNECT_ERROR = 1 # No Message. This is actually an error in the code that requested a disconnect.
+CLIENT_DISCONNECT_LOGOUT = 2 # Response to a Client logout message.
+CLIENT_DISCONNECT_MALFORMED_CLIENT_SET_AVATAR = 99 # The CLIENT_SET_AVATAR failed to pass a DOID or is malformed.
+CLIENT_DISCONNECT_COMM_CHANNEL_CONFLICT = 100 # A different communication channel was just established with the same identity as this one.   
+CLIENT_DISCONNECT_INVALID_SEC_TOKEN = 101 # A CLIENT_SET_SECURITY with a NULL token on the message.
+CLIENT_DISCONNECT_SEC_TOKEN_DEC_ERROR = 102 # The Server had a problem decrypting the token provide with a CLIENT_SET_SECURITY. (OpenSSL token)
+CLIENT_DISCONNECT_OPENSSL_TOKEN_PARSE_ERROR = 103 # There Was an Error Parsing the OpenSSl token for the required fields.
+CLIENT_DISCONNECT_ACCOUNT_NAME_LENGTH_ERROR = 104 # Name Length Is in error. The unique account identifier is shorter than 2 bytes or longer than 45 bytes.
+CLIENT_DISCONNECT_EXPIRED_PLAY_TOKEN = 105 # The Expiration time on this play token has passed.
+CLIENT_DISCONNECT_INVALID_PLAY_TOKEN_TYPE = 106 # The field indicating what type of token we are processing is invalid.
+CLIENT_DISCONNECT_MALFORMED_CLIENT_SET_WISHNAME = 108 # Error decoding CLIENT_SET_WISHNAME. Malformed request.
+CLIENT_DISCONNECT_MALFORMED_AVATAR_CREATIVE_MESSAGE = 109 # Error decoding CLIENT_SET_WISHNAME_CLEAR or CLIENT_CREATE_AVATAR. Malformed request.
+CLIENT_DISCONNECT_DNA_RANGE_ERROR = 110 # The DNA provided has failed the basic range tests. See Client Agent log for details.
+CLIENT_DISCONNECT_DNA_NAME_CONVERT_ERROR = 111 # The DNA name converter had a problem creating a default a name for this DNA string.
+CLIENT_DISCONNECT_MALFORMED_CLIENT_DELETE_AVATAR = 113 # Error Decoding the CLIENT_DELETE_AVATAR message. Malformed request.
+CLIENT_DISCONNECT_MALFORMED_CLIENT_SET_SHARD  = 115 # The client request CLIENT_SET_SHARD seems to be malformed.
+CLIENT_DISCONNECT_MALFORMED_CLIENT_SET_ZONE = 116 # The CLIENT_SET_ZONE message seems to be malformed.
+CLIENT_DISCONNECT_MALFORMED_CLIENT_OBJECT_UPDATE_FIELD = 117 # The CLIENT_OBJECT_UPDATE_FIELD seems to be malformed.
+CLIENT_DISCONNECT_INVALID_OBJECT_UPDATE_FIELD = 118 # Got a CLIENT_OBJECT_UPDATE_FIELD for a field that this client is not allowed to update.
+CLIENT_DISCONNECT_INVALID_OBJECT_UPDATE_FIELD_2 = 119 # Got a CLIENT_OBJECT_UPDATE_FIELD for a field that this client is not allowed to update.
+CLIENT_DISCONNECT_RESTRICTED_CHAT_DENIAL = 120 # This client tried to send a chat message but does not have chat permissions set.
+CLIENT_DISCONNECT_LOGIN2_SSL_DECRYPT_ERROR = 122 # Error Decrypting OpenSSl token in CLIENT_LOGIN_2.
+CLIENT_DISCONNECT_BAD_LOGIN_TYPE = 123 # CLIENT_LOGIN. The client agent is in a mode that disallows this type of login.
+CLIENT_DISCONNECT_MALFORMED_CLIENT_LOGIN = 124 # CLIENT_LOGIN failed to parse this message. Malformed.
+CLIENT_DISCONNECT_INVALID_DOWNLOAD_HASH = 125 # Error validating download hash or invalid download hash.
+CLIENT_DISCONNECT_PERMISSIONS_ERROR = 126 # Got Admin Command from non admin. Admin bit not set at login or we had an error decoding a CLIENT_GET_AVATAR_DETAILS.
+CLIENT_DISCONNECT_CLIENT_AGENT_CLOSED = 151 # A CLIENT_AGENT_CLOSE_CONECTION message was just received by the client agent. Today the only server that uses this comment is the client agent web page.
+CLIENT_DISCONNECT_SHARD_CLOSED = 153 # Your avatar has been removed by an AI request. This is usually issued when a district goes threw a hard shutdown. But technically could be caused by any trusted server issuing the a state server delete for a active avatar.
+CLIENT_DISCONNECT_FSM_ERROR = 200 # Internal Error in the client’s state machine. Contact Develops for correction.
+CLIENT_DISCONNECT_LOGIN2_DATABASE_ERROR = 201 # A Fatal Error Has Happened on The Database part of the LOGIN2 client transaction.
+CLIENT_DISCONNECT_LOGIN2_INVALID_TOKEN_TYPE = 204 # The Token type provided to the CLIENT_LOGIN_2 message is invalided.
+CLIENT_DISCONNECT_BAD_DCHASH = 205 # The dc hash provided does not match the servers.
+CLIENT_DISCONNECT_INVALID_GREEN_TOKEN = 207 # The green token is invalid. Fails basic tests.
+CLIENT_DISCONNECT_NOPLAY_GREEN_TOKEN = 208 # The green indicates you are not allowed to play.
+CLIENT_DISCONNECT_GREEN_TOKEN_INVALID_SWID = 210 # The SWID in the green does not pass basic validation. 
+CLIENT_DISCONNECT_CLIENT_LOGIN_BAD_VERSION = 211 # Invalid Version code in the CLIENT_LOGIN message.
+CLIENT_DISCONNECT_CLIENT_LOGIN_BAD_DCHASH = 212 # Invalid DC hash in the CLIENT_LOGIN message.
+CLIENT_DISCONNECT_FSM_ERROR_2 = 220 # Internal Error in the client’s state machine.  Contact Develops for correction.
+CLIENT_DISCONNECT_MALFORMED_CLIENT_LOGIN_2 = 221 # Error decoding CLIENT_LOGIN_2 malformed message.
 
 # Custom Internal Disconnect Types
-CLIENT_DISCONNECT_INVALID_MSGTYPE = 108
-CLIENT_DISCONNECT_NO_HEARTBEAT = 345
-CLIENT_DISCONNECT_ALREADY_LOGGED_IN = 346
-CLIENT_DISCONNECT_BAD_VERSION = 124
-CLIENT_DISCONNECT_BAD_DCHASH = 125
-CLIENT_DISCONNECT_INVALID_PLAY_TOKEN_TYPE = 284
-CLIENT_DISCONNECT_TRUNCATED_DATAGRAM = 109
-CLIENT_DISCONNECT_ANONYMOUS_VIOLATION = 113
-CLIENT_DISCONNECT_SHARD_CLOSED = 114
+CLIENT_DISCONNECT_INVALID_MSGTYPE = 2227
+CLIENT_DISCONNECT_NO_HEARTBEAT = 2228
+CLIENT_DISCONNECT_ALREADY_LOGGED_IN = 2229
+CLIENT_DISCONNECT_BAD_VERSION = 2230
+CLIENT_DISCONNECT_TRUNCATED_DATAGRAM = 2231
+CLIENT_DISCONNECT_ANONYMOUS_VIOLATION = 2232
 
 # Debug Stuff
 CLIENT_DEBUG_SET_NAME = 201
-CLIENT_DEBUG_AUTHENTICATE_ADMIN = 202
 
 # The ID number of the database server.  The above direct-to-dbserver
 # transactions are sent to this ID.

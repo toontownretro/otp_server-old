@@ -17,7 +17,7 @@ clientagent-max-channels 1000001000
 clientagent-min-channels 1000000000
 clientagent-dbm-filename databases/database.dbm
 clientagent-dbm-mode c
-clientagent-version no_version_set
+clientagent-version dev
 clientagent-hash-val 0
 
 # StateServer:
@@ -38,3 +38,29 @@ database-min-channels 100000000
 #dc-multiple-inheritance #t
 #dc-sort-virtual-inheritance #t
 #dc-sort-inheritance-by-file #f
+
+
+# DNA:
+DNA_LENGTH 15
+DNA_FIRST_CHAR t
+
+DNA_MAX_ARM_COLOR 26 
+DNA_MAX_FEMALE_SHIRT_COLOR 28
+DNA_MAX_FEMALE_SHIRT_INDEX 23 
+DNA_MAX_FEMALE_SHORTS_COLOR 28
+DNA_MAX_FEMALE_SHORTS_INDEX 10
+DNA_MAX_FEMALE_SLEEVE_COLOR 28
+DNA_MAX_FEMALE_SLEEVE_INDEX 14
+DNA_MAX_GENDER_INDEX 2 
+DNA_MAX_GLOVE_COLOR 1 
+DNA_MAX_HEAD_COLOR 26 
+DNA_MAX_HEAD_INDEX 34
+DNA_MAX_LEG_COLOR 26 
+DNA_MAX_LEG_INDEX 3 
+DNA_MAX_MALE_SHIRT_COLOR 28
+DNA_MAX_MALE_SHIRT_INDEX 23
+DNA_MAX_MALE_SHORTS_COLOR 28
+DNA_MAX_MALE_SHORTS_INDEX 8 
+DNA_MAX_MALE_SLEEVE_COLOR 28
+DNA_MAX_MALE_SLEEVE_INDEX 14
+DNA_MAX_TORSO_INDEX 9 

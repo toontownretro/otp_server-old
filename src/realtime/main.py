@@ -43,10 +43,10 @@ def shutdown_component(component):
 
 def main():
     dc_loader = io.NetworkDCLoader()
-    dc_loader.read_dc_files(['../ToontownOnline/etc/otp.dc', '../ToontownOnline/etc/toon.dc'])
+    dc_loader.read_dc_files(['../otp/src/configfiles/otp.dc', '../toontown/src/configfiles/toon.dc'])
 
     message_director_address = config.GetString('messagedirector-address', '0.0.0.0')
-    message_director_port = config.GetInt('messagedirector-port', 7100)
+    message_director_port = config.GetInt('messagedirector-port', 6666)
 
     client_agent_address = config.GetString('clientagent-address', '0.0.0.0')
     client_agent_port = config.GetInt('clientagent-port', 6667)

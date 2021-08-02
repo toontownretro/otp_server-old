@@ -498,8 +498,8 @@ class DatabaseCreateFSM(DatabaseOperationFSM):
         self._field_data = None
         self._do_id = None
         
-class DatabaseRetrieveFSM(DatabaseOperationFSM):
-    notify = notify.new_category('DatabaseRetrieveFSM')
+class DatabaseGetValuesFSM(DatabaseOperationFSM):
+    notify = notify.new_category('DatabaseGetValuesFSM')
 
     def __init__(self, *args, **kwargs):
         self._context = kwargs.pop('context', 0)
@@ -606,7 +606,7 @@ class DatabaseRetrieveFSM(DatabaseOperationFSM):
             found_field_map.append(True)
             
         # Finally we're going to add if we successfully got the field or not.
-        for i in range(0, len(found_field_map):
+        for i in range(0, len(found_field_map)):
             datagram.add_uint8(found_field_map[i])
 
         self.network.handle_send_connection_datagram(datagram)
@@ -618,7 +618,77 @@ class DatabaseRetrieveFSM(DatabaseOperationFSM):
         self._dc_class = None
         self._fields = None
         self._ret_code = None
+        
+class DatabaseSetValuesFSM(DatabaseOperationFSM):
+    notify = notify.new_category('DatabaseSetValuesFSM')
 
+    def __init__(self, *args, **kwargs):
+        self._do_id = kwargs.pop('do_id', 0)
+        self._di = kwargs.pop('di', None)
+
+        DatabaseOperationFSM.__init__(self, *args, **kwargs)
+
+    def enterStart(self):
+        file_object = self.network.backend.add_file('%d' % self._do_id)
+        if not file_object:
+            self.notify.warning('Failed to set fields for object: %d, unknown object!' % (self._do_id))
+            return
+
+        dc_name = file_object.get_value('dclass')
+        dc_class = self.network.dc_loader.dclasses_by_name.get(dc_name)
+        if not dc_class:
+            self.notify.warning('Failed to set fields for object: %d, unknown dclass: %s!' % (self._do_id, dc_name))
+            return
+
+        fields = file_object.get_value('fields')
+        if not fields:
+            self.notify.warning('Failed to set fields for object: %d, invalid fields!' % (self._do_id))
+            return
+            
+        # First we want to get all of our field names.
+        field_names = []
+        num_fields = self._di.get_uint16()
+        for i in range(0, num_fields):
+            field_names.append(self._di.get_string())
+        
+        # Now we want to unpack the stored data for our fields.
+        # This should work fine because the names and corresponding
+        # values are stored in the same order.
+        for i in range(0, num_fields):
+            field_name = field_names[i]
+            field_packer = DCPacker()
+            field_packer.set_unpack_data(self._di.get_string())
+            
+            field = dc_class.get_field_by_name(field_name)
+            if not field:
+                self.notify.warning('Failed to unpack field: %s dclass: %s, invalid field!' % (field_name, dc_class.get_name()))
+                continue
+
+            field_packer.begin_unpack(field)
+            field_args = field.unpack_args(field_packer)
+            field_packer.end_unpack()
+            if not field_args:
+                self.notify.warning('Failed to unpack field args for field: %s dclass: %s, invalid result!' % (field_name, dc_class.get_name()))
+                continue
+
+            fields[field.get_name()] = field_args
+        
+        # Now we'll update our file object with our new values.
+        file_object.set_value('fields', fields)
+
+        self.network.backend.remove_file(file_object)
+        DatabaseOperationFSM.enterStart(self)
+
+    def exitStart(self):
+        pass
+
+    def enterStop(self):
+        DatabaseOperationFSM.enterStop(self)
+
+    def exitStop(self):
+        self._do_id = None
+        self._di = None
+        
 class DatabaseRetrieveDepercatedFSM(DatabaseOperationFSM):
     notify = notify.new_category('DatabaseRetrieveDepercatedFSM')
 
@@ -681,9 +751,9 @@ class DatabaseRetrieveDepercatedFSM(DatabaseOperationFSM):
         self._do_id = None
         self._dc_class = None
         self._fields = None
-
-class DatabaseSetFieldFSM(DatabaseOperationFSM):
-    notify = notify.new_category('DatabaseSetFieldFSM')
+        
+class DatabaseSetFieldDepercatedFSM(DatabaseOperationFSM):
+    notify = notify.new_category('DatabaseSetFieldDepercatedFSM')
 
     def __init__(self, *args, **kwargs):
         self._do_id = kwargs.pop('do_id', 0)
@@ -694,24 +764,18 @@ class DatabaseSetFieldFSM(DatabaseOperationFSM):
     def enterStart(self):
         file_object = self.network.backend.add_file('%d' % self._do_id)
         if not file_object:
-            self.notify.warning('Failed to set fields for object: %d, unknown object!' % (
-                self._do_id))
-
+            self.notify.warning('Failed to set fields for object: %d, unknown object!' % (self._do_id))
             return
 
         dc_name = file_object.get_value('dclass')
         dc_class = self.network.dc_loader.dclasses_by_name.get(dc_name)
         if not dc_class:
-            self.notify.warning('Failed to set fields for object: %d, unknown dclass: %s!' % (
-                self._do_id, dc_name))
-
+            self.notify.warning('Failed to set fields for object: %d, unknown dclass: %s!' % (self._do_id, dc_name))
             return
 
         fields = file_object.get_value('fields')
         if not fields:
-            self.notify.warning('Failed to set fields for object: %d, invalid fields!' % (
-                self._do_id))
-
+            self.notify.warning('Failed to set fields for object: %d, invalid fields!' % (self._do_id))
             return
 
         field_packer = DCPacker()
@@ -719,15 +783,13 @@ class DatabaseSetFieldFSM(DatabaseOperationFSM):
         field_id = field_packer.raw_unpack_uint16()
         field = dc_class.get_field_by_index(field_id)
         if not field:
-            self.notify.error('Failed to unpack field: %d dclass: %s, invalid field!' % (
-                field_id, dc_class.get_name()))
+            self.notify.error('Failed to unpack field: %d dclass: %s, invalid field!' % (field_id, dc_class.get_name()))
 
         field_packer.begin_unpack(field)
         field_args = field.unpack_args(field_packer)
         field_packer.end_unpack()
         if not field_args:
-            self.notify.error('Failed to unpack field args for field: %d dclass: %s, invalid result!' % (
-                field.get_name(), dc_class.get_name()))
+            self.notify.error('Failed to unpack field args for field: %d dclass: %s, invalid result!' % (field.get_name(), dc_class.get_name()))
 
         fields[field.get_name()] = field_args
         file_object.set_value('fields', fields)
@@ -771,6 +833,8 @@ class DatabaseServer(io.NetworkConnector):
     def handle_datagram(self, channel, sender, message_type, di):
         if message_type == types.DBSERVER_GET_STORED_VALUES:
             self.handle_object_get_values(sender, di)
+        elif message_type == types.DBSERVER_SET_STORED_VALUES:
+            self.handle_object_set_values(sender, di)
         # Handles for custom database types.
         elif message_type == types.DBSERVER_CREATE_OBJECT:
             self.handle_create_object(sender, di)
@@ -779,13 +843,18 @@ class DatabaseServer(io.NetworkConnector):
         elif message_type == types.DBSERVER_OBJECT_SET_FIELD:
             self.handle_object_set_field(sender, di)
         else:
+            self.notify.warning('Received unknown message type: %d from sender %d!' % (message_type, sender))
             return
             
     # Handling functions for database types.
     
     def handle_object_get_values(self, sender, di):
-        self._operation_manager.add_operation(DatabaseRetrieveFSM, self, sender,
+        self._operation_manager.add_operation(DatabaseGetValuesFSM, self, sender,
             context=di.get_uint32(), do_id=di.get_uint32(), di=di)
+            
+    def handle_object_set_values(self, sender, di):
+        self._operation_manager.add_operation(DatabaseSetValuesFSM, self, sender,
+            do_id=di.get_uint32(), di=di)
             
     # Handling functions for custom database types.
 
@@ -799,7 +868,7 @@ class DatabaseServer(io.NetworkConnector):
             context=di.get_uint32(), do_id=di.get_uint32())
 
     def handle_object_set_field(self, sender, di):
-        self._operation_manager.add_operation(DatabaseSetFieldFSM, self, sender,
+        self._operation_manager.add_operation(DatabaseSetFieldDepercatedFSM, self, sender,
             do_id=di.get_uint32(), field_data=di.get_remaining_bytes())
 
     def shutdown(self):
