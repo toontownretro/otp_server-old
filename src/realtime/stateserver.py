@@ -19,41 +19,6 @@ from otp_server.realtime import util
 from otp_server.game.OtpDoGlobals import *
 from otp_server.game import ZoneUtil
 
-class Shard(object):
-
-    def __init__(self, channel, district_id, name, population):
-        self.channel = channel
-        self.district_id = district_id
-        self.name = name
-        self.population = population
-
-
-class ShardManager(object):
-
-    def __init__(self):
-        self.shards = {}
-
-    def has_shard(self, channel):
-        return channel in self.shards
-
-    def add_shard(self, channel, district_id, name, population):
-        if self.has_shard(channel):
-            return
-
-        shard = Shard(channel, district_id, name, population)
-        self.shards[channel] = shard
-        return shard
-
-    def remove_shard(self, shard):
-        if not self.has_shard(shard.channel):
-            return
-
-        del self.shards[shard.channel]
-
-    def get_shard(self, channel):
-        return self.shards.get(channel)
-
-
 class SimpleContextQueue:
     def __init__(self):
         self.ack_contexts = []
@@ -61,7 +26,7 @@ class SimpleContextQueue:
 class StateObject(object):
     notify = notify.new_category('StateObject')
 
-    def __init__(self, network, object_manager, do_id, parent_id, zone_id, dc_class, has_other, di):
+    def __init__(self, network, object_manager, do_id, parent_id, zone_id, dc_class, has_other=False, di=None):
         self._network = network
         self.object_manager = object_manager
 
@@ -88,41 +53,42 @@ class StateObject(object):
         self._zone_objects = {}
         self._watch_list = {}
 
-        field_packer = DCPacker()
-        field_packer.set_unpack_data(di.get_remaining_bytes())
+        if di != None:
+            field_packer = DCPacker()
+            field_packer.set_unpack_data(di.get_remaining_bytes())
 
-        for field_index in range(self._dc_class.get_num_inherited_fields()):
-            field = self._dc_class.get_inherited_field(field_index)
-            if not field:
-                self.notify.error('Failed to unpack required field: %d dclass: %s, unknown field!' % (field_index, self._dc_class.get_name()))
-
-            if not field.is_required():
-                continue
-
-            field_packer.begin_unpack(field)
-            field_args = field.unpack_args(field_packer)
-            field_packer.end_unpack()
-
-            self._required_fields[field.get_number()] = field_args
-
-        if self._has_other:
-            num_fields = field_packer.raw_unpack_uint16()
-            for _ in range(num_fields):
-                field_id = field_packer.raw_unpack_uint16()
-                field = self._dc_class.get_field_by_index(field_id)
+            for field_index in range(self._dc_class.get_num_inherited_fields()):
+                field = self._dc_class.get_inherited_field(field_index)
                 if not field:
-                    self.notify.error('Failed to unpack other field: %d dclass: %s, unknown field!' % (field_id, self._dc_class.get_name()))
+                    self.notify.error('Failed to unpack required field: %d dclass: %s, unknown field!' % (field_index, self._dc_class.get_name()))
 
-                if not field.is_ram():
+                if not field.is_required():
                     continue
 
                 field_packer.begin_unpack(field)
                 field_args = field.unpack_args(field_packer)
                 field_packer.end_unpack()
 
-                self._other_fields[field.get_number()] = field_args
+                self._required_fields[field.get_number()] = field_args
 
-        self._network.register_for_channel(self._do_id)
+            if self._has_other:
+                num_fields = field_packer.raw_unpack_uint16()
+                for _ in range(num_fields):
+                    field_id = field_packer.raw_unpack_uint16()
+                    field = self._dc_class.get_field_by_index(field_id)
+                    if not field:
+                        self.notify.error('Failed to unpack other field: %d dclass: %s, unknown field!' % (field_id, self._dc_class.get_name()))
+
+                    if not field.is_ram():
+                        continue
+
+                    field_packer.begin_unpack(field)
+                    field_args = field.unpack_args(field_packer)
+                    field_packer.end_unpack()
+
+                    self._other_fields[field.get_number()] = field_args
+
+            self._network.register_for_channel(self._do_id)
 
     @property
     def do_id(self):
@@ -250,8 +216,7 @@ class StateObject(object):
         for field_index, field_args in list(sorted_fields.items()):
             field = self._dc_class.get_field_by_index(field_index)
             if not field:
-                self.notify.error('Failed to append required data for field: %d '
-                    'dclass: %s, unknown field!' % (field_index, self._dc_class.get_name()))
+                self.notify.error('Failed to append required data for field: %d  dclass: %s, unknown field!' % (field_index, self._dc_class.get_name()))
 
             if broadcast_only and not field.is_broadcast():
                 continue
@@ -267,8 +232,7 @@ class StateObject(object):
         for field_index, field_args in list(self._other_fields.items()):
             field = self._dc_class.get_field_by_index(field_index)
             if not field:
-                self.notify.error('Failed to append other data for field: %d '
-                    'dclass: %s, unknown field!' % (field_index, self._dc_class.get_name()))
+                self.notify.error('Failed to append other data for field: %d  dclass: %s, unknown field!' % (field_index, self._dc_class.get_name()))
 
             field_packer.raw_pack_uint16(field.get_number())
             field_packer.begin_pack(field)
@@ -556,16 +520,12 @@ class StateObject(object):
     def handle_get_zones_objects(self, sender, di):
         zone_ids = [di.get_uint32() for _ in range(di.get_uint16())]
         if not self._owner_id:
-            self.notify.warning('Cannot get zone objects for object: %d, '
-                'object does not have an owner!' % self._do_id)
-
+            self.notify.warning('Cannot get zone objects for object: %d, object does not have an owner!' % self._do_id)
             return
 
         parent_object = self._network.object_manager.get_object(self._parent_id)
         if not parent_object:
-            self.notify.warning('Cannot get zone objects for object: %d, '
-                'object has no parent!' % self._do_id)
-
+            self.notify.warning('Cannot get zone objects for object: %d, object has no parent!' % self._do_id)
             return
 
         # filter out our own object from the zone list, as we do not want
@@ -857,16 +817,12 @@ class StateObjectManager(object):
     def handle_updating_field(self, state_object, sender, field, field_args, excludes=[]):
         assert(state_object != None)
         if not state_object.parent_id:
-            self.notify.debug('Cannot handle updating field for object: %d, '
-                'object has no parent!' % state_object.do_id)
-
+            self.notify.debug('Cannot handle updating field for object: %d, object has no parent!' % state_object.do_id)
             return
 
         parent_object = self.get_object(state_object.parent_id)
         if not parent_object:
-            self.notify.debug('Cannot handle updating field for object: %d, '
-                'object has no parent!' % state_object.do_id)
-
+            self.notify.debug('Cannot handle updating field for object: %d, object has no parent!' % state_object.do_id)
             return
 
         if not parent_object.has_child(state_object.do_id):
@@ -883,19 +839,19 @@ class StateServer(io.NetworkConnector):
     def __init__(self, *args, **kwargs):
         io.NetworkConnector.__init__(self, *args, **kwargs)
 
-        self.shard_manager = ShardManager()
         self.object_manager = StateObjectManager()
+        
+        # Create our Object Server.
+        object_server = StateObject(self, self.object_manager, 20100000, 0, 0, self.dc_loader.dclasses_by_name.get("ObjectServer"))
+        self.object_manager.add_object(object_server)
+        
+        # Create our Central Logger.
+        central_logger = StateObject(self, self.object_manager, 4688, 0, 0, self.dc_loader.dclasses_by_name.get("CentralLogger"))
+        self.object_manager.add_object(central_logger)
 
     def handle_datagram(self, channel, sender, message_type, di):
-        if message_type == types.STATESERVER_ADD_SHARD:
-            self.handle_add_shard(sender, di)
-        elif message_type == types.STATESERVER_UPDATE_SHARD:
-            self.handle_update_shard(sender, di)
-        elif message_type == types.STATESERVER_REMOVE_SHARD:
-            self.handle_remove_shard(sender)
-        elif message_type == types.STATESERVER_GET_SHARD_ALL:
-            self.handle_get_shard_list(sender)
-        elif message_type == types.STATESERVER_OBJECT_GENERATE_WITH_REQUIRED:
+        print("Handling datagram from %d, %d, with message type %d!" % (channel, sender, message_type))
+        if message_type == types.STATESERVER_OBJECT_GENERATE_WITH_REQUIRED:
             self.handle_generate(sender, False, di)
         elif message_type == types.STATESERVER_OBJECT_GENERATE_WITH_REQUIRED_OTHER:
             self.handle_generate(sender, True, di)
@@ -903,86 +859,26 @@ class StateServer(io.NetworkConnector):
             self.handle_object_update_field(channel, sender, di)
         elif message_type == types.STATESERVER_OBJECT_DELETE_RAM:
             self.handle_delete_object(sender, di)
+        elif message_type == types.STATESERVER_BOUNCE_MESSAGE:
+            print("Bouncy boi!")
         else:
             self.handle_object_datagram(channel, sender, message_type, di)
 
     def handle_object_datagram(self, channel, sender, message_type, di):
         state_object = self.object_manager.get_object(channel)
         if not state_object:
-            self.notify.debug('Received an unknown message type: '
-                '%d from channel: %d!' % (message_type, sender))
-
+            self.notify.debug('Received an unknown message type: %d from channel: %d!' % (message_type, sender))
             return
 
         state_object.handle_internal_datagram(sender, message_type, di)
 
-    def handle_add_shard(self, sender, di):
-        shard = self.shard_manager.add_shard(sender, di.get_uint32(), di.get_string(), di.get_uint32())
-        self.handle_send_update_shard(shard)
-
-    def handle_update_shard(self, sender, di):
-        shard = self.shard_manager.get_shard(sender)
-        if not shard:
-            self.notify.warning('Cannot update shard: %d, does not exist!' % sender)
-            return
-
-        shard.name = di.get_string()
-        shard.population = di.get_uint32()
-
-        self.handle_send_update_shard(shard, only_children=True)
-
-    def handle_remove_shard(self, sender):
-        shard = self.shard_manager.get_shard(sender)
-        if not shard:
-            self.notify.warning('Cannot remove shard: %d, does not exist!' % sender)
-            return
-
-        self.handle_delete_shard_objects(shard)
-
-    def handle_send_update_shard(self, shard, only_children=False):
-        for state_object in list(self.object_manager.objects.values()):
-            if not state_object.owner_id:
-                continue
-
-            if state_object.ai_channel != shard.channel and only_children:
-                continue
-
-            self.handle_get_shard_list(state_object.owner_id)
-
-    def handle_delete_shard_objects(self, shard):
-        for state_object in list(self.object_manager.objects.values()):
-            if state_object.ai_channel != shard.channel:
-                continue
-
-            # if this object is owned and since this shard is closed,
-            # send a disconnect to the client agent to be bounced back to the client.
-            if state_object.owner_id:
-                self.handle_send_disconnect(state_object.owner_id, shard)
-
-            self.object_manager.remove_object(state_object)
-
-        self.shard_manager.remove_shard(shard)
-
     def handle_send_disconnect(self, channel, shard):
+        print("Terminating shard %d, %d!" % (channel, shard))
         datagram = io.NetworkDatagram()
-        datagram.add_header(channel, self.channel,
-            types.CLIENT_AGENT_DISCONNECT)
+        datagram.add_header(channel, self.channel, types.CLIENT_AGENT_DISCONNECT)
 
         datagram.add_uint16(types.CLIENT_DISCONNECT_SHARD_CLOSED)
         datagram.add_string('Shard with channel: %d has been terminated!' % shard.channel)
-        self.handle_send_connection_datagram(datagram)
-
-    def handle_get_shard_list(self, sender):
-        datagram = io.NetworkDatagram()
-        datagram.add_header(sender, self.channel,
-            types.STATESERVER_GET_SHARD_ALL_RESP)
-
-        datagram.add_uint16(len(self.shard_manager.shards))
-        for shard in list(self.shard_manager.shards.values()):
-            datagram.add_uint32(shard.channel)
-            datagram.add_string(shard.name)
-            datagram.add_uint32(shard.population)
-
         self.handle_send_connection_datagram(datagram)
 
     def handle_generate(self, sender, has_other, di):
@@ -992,23 +888,18 @@ class StateServer(io.NetworkConnector):
         dc_id = di.get_uint16()
 
         if self.object_manager.has_object(do_id):
-            self.notify.info('Failed to generate an already existing '
-                'object with do_id: %d!' % do_id)
-
+            self.notify.info('Failed to generate an already existing object with do_id: %d!' % do_id)
             return
 
         dc_class = self.dc_loader.dclasses_by_number.get(dc_id)
         if not dc_class:
-            self.notify.warning('Failed to generate an object with do_id: %d, '
-                'no dclass found for dc_id: %d!' % (do_id, dc_id))
-
+            self.notify.warning('Failed to generate an object with do_id: %d, no dclass found for dc_id: %d!' % (do_id, dc_id))
             return
 
-        state_object = StateObject(self, self.object_manager, do_id, parent_id,
-            zone_id, dc_class, has_other, di)
+        state_object = StateObject(self, self.object_manager, do_id, parent_id, zone_id, dc_class, has_other, di)
 
         # TODO FIXME: find a better way to do this...
-        if self.shard_manager.has_shard(sender) or sender == types.UD_CHANNEL:
+        if sender == types.UD_CHANNEL:
             state_object.ai_channel = sender
 
         self.object_manager.add_object(state_object)
@@ -1016,16 +907,12 @@ class StateServer(io.NetworkConnector):
     def handle_object_update_field(self, channel, sender, di):
         do_id = di.get_uint32()
         if not di.get_remaining_size():
-            self.notify.warning('Cannot handle an field update for object: %d, '
-                'truncated datagram!' % do_id)
-
+            self.notify.warning('Cannot handle an field update for object: %d, truncated datagram!' % do_id)
             return
 
         state_object = self.object_manager.get_object(do_id)
         if not state_object:
-            self.notify.debug('Cannot handle an field update for object: %d, '
-                'unknown object!' % do_id)
-
+            self.notify.debug('Cannot handle an field update for object: %d, unknown object!' % do_id)
             return
 
         state_object.handle_update_field(channel, sender, di)

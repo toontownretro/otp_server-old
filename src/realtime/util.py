@@ -42,7 +42,7 @@ class DatabaseInterface(object):
                 self.notify.error('Creation request for %s object contains an invalid field named %s' % (dclass.get_name(), k))
                 return
 
-            field_packer.raw_pack_uint16(field.get_number())
+            field_packer.raw_pack_uint32(field.get_number())
             field_packer.begin_pack(field)
             field.pack_args(field_packer, v)
             field_packer.end_pack()
@@ -52,8 +52,8 @@ class DatabaseInterface(object):
         dg = io.NetworkDatagram()
         dg.add_header(database_id, channel_id, types.DBSERVER_CREATE_OBJECT)
         dg.add_uint32(ctx)
-        dg.add_uint16(dclass.get_number())
-        dg.add_uint16(field_count)
+        dg.add_uint32(dclass.get_number())
+        dg.add_uint32(field_count)
         dg.append_data(field_packer.get_bytes())
         self._network.handle_send_connection_datagram(dg)
 

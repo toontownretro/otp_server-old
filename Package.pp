@@ -21,19 +21,19 @@
 #endif
 
 
-// Where should we find the OTP source directory?
-#if $[OTP_SOURCE]
-  #define OTP_SOURCE $[unixfilename $[OTP_SOURCE]]
-#elif $[or $[CTPROJS],$[OTP]]
+// Where should we find the TOONTOWN source directory?
+#if $[TOONTOWN_SOURCE]
+  #define TOONTOWN_SOURCE $[unixfilename $[TOONTOWN_SOURCE]]
+#elif $[or $[CTPROJS],$[TOONTOWN]]
   // If we are presently attached, use the environment variable.
-  #define OTP_SOURCE $[unixfilename $[OTP]]
-  #if $[eq $[OTP],]
-    #error You seem to be attached to some trees, but not OTP!
+  #define TOONTOWN_SOURCE $[unixfilename $[TOONTOWN]]
+  #if $[eq $[TOONTOWN],]
+    #error You seem to be attached to some trees, but not TOONTOWN!
   #endif
 #else
   // Otherwise, if we are not attached, we guess that the source is a
   // sibling directory to this source root.
-  #define OTP_SOURCE $[standardize $[TOPDIR]/../otp]
+  #define TOONTOWN_SOURCE $[standardize $[TOPDIR]/../toontown]
 #endif
 
 // Where should we install OTP_SERVER?
@@ -50,14 +50,14 @@
 #endif
 
 
-// Also get the OTP Package file and everything that includes.
-#if $[not $[isfile $[OTP_SOURCE]/Package.pp]]
-  #printvar OTP_SOURCE
-  #error OTP source directory not found from otp_server!  Are you attached properly?
+// Also get the TOONTOWN Package file and everything that includes.
+#if $[not $[isfile $[TOONTOWN_SOURCE]/Package.pp]]
+  #printvar TOONTOWN_SOURCE
+  #error TOONTOWN source directory not found from otp_server!  Are you attached properly?
 #endif
 
-#include $[OTP_SOURCE]/Package.pp
+#include $[TOONTOWN_SOURCE]/Package.pp
 
 // Define the inter-tree dependencies.
-#define NEEDS_TREES otp $[NEEDS_TREES]
-#define DEPENDABLE_HEADER_DIRS $[DEPENDABLE_HEADER_DIRS] $[OTP_INSTALL]/include
+#define NEEDS_TREES toontown $[NEEDS_TREES]
+#define DEPENDABLE_HEADER_DIRS $[DEPENDABLE_HEADER_DIRS] $[TOONTOWN_INSTALL]/include

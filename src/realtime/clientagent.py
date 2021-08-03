@@ -174,15 +174,16 @@ class LoadAccountFSM(ClientOperation):
 
     def enterCreate(self):
         fields = {
-            'ACCOUNT_AV_SET': ([0] * 6,),
-            'pirateAvatars': ([0] * 6,),
+            'DcObjectType': ("Account"),
+            'ACCOUNT_AV_SET': ([0] * 6),
+            'pirateAvatars': ([0] * 6),
             'HOUSE_ID_SET': ([]),
-            'ESTATE_ID': (0,),
-            'ACCOUNT_AV_SET_DEL': ([[],],),
-            'PLAYED_MINUTES': ("",),
-            'PLAYED_MINUTES_PERIOD': ("",),
-            'CREATED': (time.ctime(),),
-            'LAST_LOGIN': ("",)
+            'ESTATE_ID': (0),
+            'ACCOUNT_AV_SET_DEL': ([]),
+            'PLAYED_MINUTES': (""),
+            'PLAYED_MINUTES_PERIOD': (""),
+            'CREATED': (time.ctime()),
+            'LAST_LOGIN': ("")
         }
 
         self.manager.network.database_interface.create_object(self.client.channel,

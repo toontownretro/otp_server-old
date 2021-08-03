@@ -120,11 +120,6 @@ STATESERVER_OBJECT_GET_ZONES_OBJECTS_RESP =                2105
 STATESERVER_OBJECT_GET_ZONES_OBJECTS_2 =                   2106
 STATESERVER_OBJECT_GET_ZONES_OBJECTS_2_RESP =              2107
 STATESERVER_OBJECT_CLEAR_WATCH =                           2108
-STATESERVER_ADD_SHARD =                                    2109
-STATESERVER_REMOVE_SHARD =                                 2110
-STATESERVER_UPDATE_SHARD =                                 2111
-STATESERVER_GET_SHARD_ALL =                                2112
-STATESERVER_GET_SHARD_ALL_RESP =                           2113
 
 ACCOUNT_AVATAR_USAGE =  3005 # Avatar online or offline
 ACCOUNT_ACCOUNT_USAGE = 3006 # Account login or log off

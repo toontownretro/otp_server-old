@@ -421,8 +421,8 @@ class DatabaseCreateFSM(DatabaseOperationFSM):
     def enterStart(self):
         dc_class = self.network.dc_loader.dclasses_by_number.get(self._dc_id)
         if not dc_class:
-            self.notify.error('Failed to create object: %d context: %d, unknown dclass!' % (
-                self._dc_id, self._context))
+            self.notify.error('Failed to create object: %d context: %d, unknown dclass!' % (self._dc_id, self._context))
+            return
 
         self._do_id = self.network.backend.allocator.allocate()
         file_object = self.network.backend.add_file('%d' % self._do_id)
@@ -436,18 +436,16 @@ class DatabaseCreateFSM(DatabaseOperationFSM):
         field_packer.set_unpack_data(self._field_data)
 
         for _ in range(self._field_count):
-            field_id = field_packer.raw_unpack_uint16()
+            field_id = field_packer.raw_unpack_uint32()
             field = dc_class.get_field_by_index(field_id)
             if not field:
-                self.notify.error('Failed to unpack field: %d dclass: %s, invalid field!' % (
-                    field_id, dc_class.get_name()))
+                self.notify.error('Failed to unpack field: %d dclass: %s, invalid field!' % (field_id, dc_class.get_name()))
 
             field_packer.begin_unpack(field)
             field_args = field.unpack_args(field_packer)
             field_packer.end_unpack()
             if not field_args:
-                self.notify.error('Failed to unpack field args for field: %d dclass: %s, invalid result!' % (
-                    field.get_name(), dc_class.get_name()))
+                self.notify.error('Failed to unpack field args for field: %s dclass: %s, invalid result!' % (field.get_name(), dc_class.get_name()))
 
             fields[field.get_name()] = field_args
 
@@ -466,8 +464,7 @@ class DatabaseCreateFSM(DatabaseOperationFSM):
             field_args = field.unpack_args(field_packer)
             field_packer.end_unpack()
             if not field_args:
-                self.notify.error('Failed to unpack field args for field: %d dclass: %s, invalid result!' % (
-                    field.get_name(), dc_class.get_name()))
+                self.notify.error('Failed to unpack inherited field args for field: %s dclass: %s, invalid result!' % (field.get_name(), dc_class.get_name()))
 
             fields[field.get_name()] = field_args
 
@@ -860,7 +857,7 @@ class DatabaseServer(io.NetworkConnector):
 
     def handle_create_object(self, sender, di):
         self._operation_manager.add_operation(DatabaseCreateFSM, self, sender,
-            context=di.get_uint32(), dc_id=di.get_uint16(), field_count=di.get_uint16(),
+            context=di.get_uint32(), dc_id=di.get_uint32(), field_count=di.get_uint32(),
             field_data=di.get_remaining_bytes())
 
     def handle_object_get_all(self, sender, di):
